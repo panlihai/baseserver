@@ -28,14 +28,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/*/infodetail', infodetail);
-app.use('/*/infolist', infolist);
-app.use('/*/listdetail', listdetail);
-app.use('/*/listinfo', listinfo);
-app.use('/*/create', create);
-app.use('/*/remove', remove);
-app.use('/*/update', update);
-app.use('/*/appdetail', appdetail);
+app.use('/server/api/*/*/*/infodetail', infodetail);
+app.use('/server/api/*/*/*/infolist', infolist);
+app.use('/server/api/*/*/*/listdetail', listdetail);
+app.use('/server/api/*/*/*/listinfo', listinfo);
+app.use('/server/api/*/*/*/create', create);
+app.use('/server/api/*/*/*/remove', remove);
+app.use('/server/api/*/*/*/update', update);
+app.use('/server/api/*/*/*/appdetail', appdetail);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
