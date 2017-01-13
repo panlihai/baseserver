@@ -1,7 +1,7 @@
 /**
  * Created by panlihai on 2017-01-10.
  */
-var log = require('morgan');
+var log = require('debug');
 var mysql = require('mysql');
 //连接池集合
 var pools = {};
@@ -131,6 +131,9 @@ var insertOne = function (poolId, tableName, fields, values, callback) {
  * @param config
  */
 var init = function (config) {
+    if(!config){
+        config = masterConfig;
+    }
     if (!config.poolId) {
         log.err('连接池poolId不能为空！');
         return;
