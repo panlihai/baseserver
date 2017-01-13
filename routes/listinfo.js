@@ -4,8 +4,14 @@ var mysql = require('../service/mysql');
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
-    var param = req.body;
-    res.render('index', {title: 'Express'});
+    mysql.query(null,'*','SYS_APP'," ENABLE='Y' ",0,200,function(err,results,fields){
+        if(err){
+            console.log(err);
+        }else{
+           res.JSON(results);
+        }
+    });
+
 });
 
 module.exports = router;

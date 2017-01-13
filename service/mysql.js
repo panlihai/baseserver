@@ -77,9 +77,9 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize, callb
     if (!fields) {
         fields = " * ";
     }
-    var sql = 'select' + fields + 'from ' + tableName + ' ';
-    if (!where) {
-        sql += where;
+    var sql = 'select ' + fields + ' from ' + tableName + ' ';
+    if (!where && where.length > 0) {
+        sql += 'where ' + where;
     }
     if (pageNum && pageSize) {
         sql += " limit " + pageNum + "," + pageSize;
@@ -131,8 +131,8 @@ var insertOne = function (poolId, tableName, fields, values, callback) {
  * config {poolId: string, host: string, port: number, user: string, password: string, database: string}
  * @param config
  */
-var init = function (config) {
-    if(!config){
+var initPools = function (config) {
+    if (!config) {
         config = masterConfig;
     }
     if (!config.poolId) {
@@ -144,26 +144,29 @@ var init = function (config) {
     //默认把核心连接池中写入到pools中
     pools[config.poolId] = pool;
     //初始化所有系统的连接池
-    execSql(masterConfig.poolId, "select DSID,HOSTS,PORTS,DBNAME,USER,PASSWORD from SYS_DATASOURCE where ENABLE='Y' and DSTYPE='DB'", function (err, results, fields) {
-        if (err) {
-            log.err("数据源初始化异常，请校验连接池配置信息是否正常");
-            log.err(err);
-            return;
-        }
-        results.forEach(function (item) {
-            var p = createPool(item.DSID, {
-                poolId: item.DSID,
-                host: item.HOSTS,
-                port: item.PORTS,
-                user: item.USER,
-                password: item.PASSWORD,
-                database: item.DBNAME
+    execSql(masterConfig.poolId, "select DSID,HOSTS,PORTS,DBNAME,USER,PASSWORD from SYS_DATASOURCE where ENABLE='Y' and DSTYPE='DB'",
+        function (err, results, fields) {
+            if (err) {
+                log.err("数据源初始化异常，请校验连接池配置信息是否正常");
+                log.err(err);
+                return;
+            }
+            results.forEach(function (item) {
+                var p = createPool(item.DSID, {
+                    poolId: item.DSID,
+                    host: item.HOSTS,
+                    port: item.PORTS,
+                    user: item.USER,
+                    password: item.PASSWORD,
+                    database: item.DBNAME
+                });
+                pools[item.DSID] = p;
             });
-            pools[item.DSID] = p;
         });
-    });
 };
+module.masterConfig = masterConfig;
+module.exports.execSql = execSql;
 module.exports.queryOne = queryOne;
 module.exports.query = query;
 module.exports.insertOne = insertOne;
-module.exports.init = init;
+module.exports.initPools = initPools;

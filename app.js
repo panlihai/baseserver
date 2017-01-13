@@ -18,7 +18,10 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 switch (app.get('env')) {
@@ -31,15 +34,8 @@ switch (app.get('env')) {
         }));
         break;
 }
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 //同源策略
-app.use('/server/api', require('cors'));
-
-
-
+//app.use('/server/api', require('cors'));
 app.use('/server/api/:PID/:APPID/:SUPERVICE/INFO', infodetail);
 app.use('/server/api/:PID/:APPID/:SUPERVICE/INFOLIST', infolist);
 app.use('/server/api/:PID/:APPID/:SUPERVICE/LISTDETAIL', listdetail);

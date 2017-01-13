@@ -6,7 +6,7 @@
 var app = require('../app');
 var debug = require('debug')('baseserver:server');
 var http = require('http');
-
+var mysql = require('../service/mysql');
 
 function startServer() {
     /**
@@ -118,6 +118,8 @@ function startServer() {
             : 'port ' + addr.port;
         debug('Listening on ' + bind);
     }
+    //初始化连接池
+    mysql.initPools();
 }
 if (require.main == module) {
     //如果是应用程序直接运行，启动应用程序
