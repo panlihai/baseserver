@@ -2,6 +2,7 @@
  * Created by panlihai on 2017-01-13.
  */
 var log = require('debug');
+var mysql= require('../service/mysql.js');
 exports = {
     //tablename
     tableName: 'SYS_APP',
@@ -15,7 +16,7 @@ exports = {
          * 初始化元數據
          */
         var appSql = "select " + this.fields + " from " + this.tableName + " where ENABLE='Y'";
-        execSql(masterConfig.poolId, appSql, function (err, results) {
+        mysql.execSql(mysql.masterConfig.poolId, appSql, function (err, results) {
             if (err) {
                 log.err("数据源初始化异常，请校验连接池配置信息是否正常");
                 log.err(err);
@@ -35,7 +36,7 @@ exports = {
          * 初始化元數據
          */
         var appSql = "select " + this.fields + " from " + this.tableName + " where appid='"+appid+"'";
-        execSql(masterConfig.poolId, appSql, function (err, results) {
+        mysql.execSql(mysql.masterConfig.poolId, appSql, function (err, results) {
             if (err) {
                 log.err("数据源初始化异常，请校验连接池配置信息是否正常");
                 log.err(err);
