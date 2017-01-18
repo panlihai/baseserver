@@ -3,8 +3,8 @@
  */
 var log = require('debug');
 var async = require('async');
-var mysql = require('../service/mysql');
-var sysDicDetails = require('./sysappdicdetail');
+var mysql = require('../../service/mysql.js');
+var sysDicDetails = require('./sysdicdetail.js');
 exports = {
     //tablename
     tableName: 'SYS_DIC',
@@ -41,3 +41,10 @@ exports = {
 
     }
 };
+exports.initByAppid('SYSAPP',function(err,result){
+   if(err){
+       log.error(err);
+   } else{
+       log.log(result);
+   }
+});

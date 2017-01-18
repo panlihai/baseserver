@@ -1,11 +1,8 @@
 /**
  * Created by panlihai on 2017-01-13.
  */
-/**
- * Created by panlihai on 2017-01-13.
- */
 var log = require('debug');
-var mysql = require('../service/mysql');
+var mysql = require('../../service/mysql');
 exports = {
     //tablename
     tableName: 'SYS_APPBUTTONS',

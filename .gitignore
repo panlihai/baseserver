@@ -1,3 +1,4 @@
-//默认不往git上上传文件夹
+#默认不往git上上传文件夹#
 node_modules
 .idea
+config.js

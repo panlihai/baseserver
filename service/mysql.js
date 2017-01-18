@@ -4,20 +4,10 @@
  */
 var log = require('debug');
 var mysql = require('mysql');
+var cfg = require('../config.js');
 //连接池集合
 var pools = {};
-/**
- * 获取核心服务的连接池
- * @type {{host: string, port: number, user: string, password: string, database: string}}
- */
-var masterConfig = {
-    poolId: 'baseServer',
-    host: 'yd.pcorp.cn',
-    port: 3306,
-    user: 'root',
-    password: '1qaz2wsx3edc',
-    database: 'develop'
-};
+
 /**
  * 根据配置文件获取连接池
  * @param id 连接池Id
@@ -31,7 +21,7 @@ var createPool = function (poolId, config) {
  * 核心服务的连接池
  * @type {Pool}
  */
-var masterPool = mysql.createPool('baseServer', masterConfig);
+var masterPool = mysql.createPool('baseServer', cfg.masterConfig);
 /**
  * 执行查询，通过回调函数返回结果
  * @param poolId 连接池ID
@@ -40,7 +30,7 @@ var masterPool = mysql.createPool('baseServer', masterConfig);
  */
 var execSql = function (poolId, sql, callback) {
     if (!pools[poolId]) {
-        poolId = masterConfig.poolId;
+        poolId = cfg.masterConfig.poolId;
     }
     /**
      * 获取连接池并从连接池中获取链接，并执行sql
@@ -48,7 +38,7 @@ var execSql = function (poolId, sql, callback) {
     var p = pools[poolId];
     p.getConnection(function (err, conn) {
         if (err) {
-            log.err(err);
+            log.error(err);
             callback(err, null, null);
         } else {
             log.log(sql);
@@ -107,7 +97,7 @@ var queryOne = function (poolId, fields, tableName, where, callback) {
  */
 var insertOne = function (poolId, tableName, fields, values, callback) {
     if (!pools[poolId]) {
-        poolId = masterConfig.poolId;
+        poolId = cfg.masterConfig.poolId;
     }
     /**
      * 获取连接池并从连接池中获取链接，并执行sql
@@ -133,7 +123,7 @@ var insertOne = function (poolId, tableName, fields, values, callback) {
  */
 var initPools = function (config) {
     if (!config) {
-        config = masterConfig;
+        config = cfg.masterConfig;
     }
     if (!config.poolId) {
         log.err('连接池poolId不能为空！');
@@ -144,7 +134,7 @@ var initPools = function (config) {
     //默认把核心连接池中写入到pools中
     pools[config.poolId] = pool;
     //初始化所有系统的连接池
-    execSql(masterConfig.poolId, "select DSID,HOSTS,PORTS,DBNAME,USER,PASSWORD from SYS_DATASOURCE where ENABLE='Y' and DSTYPE='DB'",
+    execSql(cfg.masterConfig.poolId, "select DSID,HOSTS,PORTS,DBNAME,USER,PASSWORD from SYS_DATASOURCE where ENABLE='Y' and DSTYPE='DB'",
         function (err, results, fields) {
             if (err) {
                 log.err("数据源初始化异常，请校验连接池配置信息是否正常");
@@ -175,7 +165,6 @@ var smooth = function(method) {
     };
 };
 module.exports.smooth = smooth;
-module.masterConfig = masterConfig;
 module.exports.execSql = execSql;
 module.exports.queryOne = queryOne;
 module.exports.query = query;

@@ -2,11 +2,11 @@
  * Created by panlihai on 2017-01-13.
  */
 var log = require('debug');
-var mysql = require('../service/mysql.js');
-var appFields = require('./sysappfileds.js');
+var mysql = require('../../service/mysql.js');
+var appFields = require('./sysappfields.js');
 var appButtons = require('./sysappbuttons.js');
 var appLinks = require('./sysapplinks.js');
-var appInterfaces = require('./sysappinterfaces.js');
+var appInterfaces = require('./sysinterface.js');
 var appDics = require('./sysdic');
 exports = {
     //tablename

@@ -7,13 +7,14 @@ var app = require('../app');
 var debug = require('debug')('baseserver:server');
 var http = require('http');
 var mysql = require('../service/mysql');
+var cfg = require('./config.js');
 
 function startServer() {
     /**
      * Get port from environment and store in Express.
      */
 
-    var port = normalizePort(process.env.PORT || '3000');
+    var port = normalizePort(process.env.PORT || cfg.port);
     app.set('port', port);
 
     /**
@@ -119,7 +120,7 @@ function startServer() {
         debug('Listening on ' + bind);
     }
     //初始化连接池
-    mysql.initPools();
+    mysql.initPools(cfg.masterConfig);
 }
 if (require.main == module) {
     //如果是应用程序直接运行，启动应用程序
