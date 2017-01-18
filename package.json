@@ -1,11 +1,13 @@
 {
   "name": "baseserver",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1",
+  "private": false,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test":"test-api.js"
   },
   "dependencies": {
+    "async": "^2.1.4",
     "body-parser": "~1.15.2",
     "cluster": "^0.7.7",
     "connect-rest": "^2.11.1",
@@ -26,5 +28,25 @@
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
     "restler": "^3.4.0"
-  }
+  },
+  "repository": "git://github.com/panlihai/baseserver",
+  "main": "app.js",
+  "author": "Lihai Pan <hlhailan@163.com>",
+  "contributors": [
+    {
+      "name": "Lihai Pan",
+      "email": "11140788@qq.com"
+    }
+  ],
+  "keywords": [
+    "server",
+    "framework",
+    "restful",
+    "app",
+    "api"
+  ],
+  "engines": {
+    "node": "*"
+  },
+  "license":"MIT"
 }

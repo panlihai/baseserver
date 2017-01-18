@@ -2,7 +2,12 @@
  * Created by panlihai on 2017-01-13.
  */
 var log = require('debug');
-var mysql= require('../service/mysql.js');
+var mysql = require('../service/mysql.js');
+var appFields = require('./sysappfileds.js');
+var appButtons = require('./sysappbuttons.js');
+var appLinks = require('./sysapplinks.js');
+var appInterfaces = require('./sysappinterfaces.js');
+var appDics = require('./sysdic');
 exports = {
     //tablename
     tableName: 'SYS_APP',
@@ -27,15 +32,17 @@ exports = {
              */
             results.forEach(function (item) {
                 this.apps[item.APPID] = item;
+                //加载明细选项
+                this.initAppDetail(item);
             });
         });
     },
     //init app by appid
-    initByAppid:function(appid){
+    initByAppid: function (appid) {
         /**
          * 初始化元數據
          */
-        var appSql = "select " + this.fields + " from " + this.tableName + " where appid='"+appid+"'";
+        var appSql = "select " + this.fields + " from " + this.tableName + " where appid='" + appid + "'";
         mysql.execSql(mysql.masterConfig.poolId, appSql, function (err, results) {
             if (err) {
                 log.err("数据源初始化异常，请校验连接池配置信息是否正常");
@@ -47,7 +54,51 @@ exports = {
              */
             results.forEach(function (item) {
                 this.apps[item.APPID] = item;
+                //加载明细选项
+                this.initAppDetail(item);
             });
+        });
+    },
+    initAppDetail: function (app) {
+        //加载字段内容
+        appFields.initByAppid(app.APPID, function (err, results) {
+            if (err) {
+                log.error(err);
+            } else {
+                this.apps[app.APPID].appfields = results;
+            }
+        });
+        //加载appButtons
+        appButtons.initByAppid(app.APPID, function (err, results) {
+            if (err) {
+                log.error(err);
+            } else {
+                this.app[app.APPID].appbuttons = results;
+            }
+        });
+        //加载appLinks
+        appLinks.initByAppid(app.APPID, function (err, results) {
+            if (err) {
+                log.error(err);
+            } else {
+                this.app[app.APPID].applinks = results;
+            }
+        });
+        //加载appInterfaces
+        appInterfaces.initByAppid(app.APPID, function (err, results) {
+            if (err) {
+                log.error(err);
+            } else {
+                this.app[app.APPID].appinterfaces = results;
+            }
+        });
+        //加载appDics
+        appDics.initByAppid(app.APPID, function (err, results) {
+            if (err) {
+                log.error(err);
+            } else {
+                this.app[app.APPID].appinterfaces = results;
+            }
         });
     },
     //get a app object by appid

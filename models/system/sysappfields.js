@@ -16,8 +16,8 @@ exports = {
         var sql = "select " + this.fields + " from " + this.tableName + " where appid='" + appId + "'";
         mysql.execSql(mysql.masterConfig.poolId, sql, function (err, results) {
             if (err) {
-                log.err("数据源初始化异常，请校验连接池配置信息是否正常");
-                log.err(err);
+                log.error("数据源初始化异常，请校验连接池配置信息是否正常");
+                log.error(err);
                 callback(err, null);
             } else {
                 callback(null, results);
