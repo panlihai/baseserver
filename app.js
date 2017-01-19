@@ -5,15 +5,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 //接口处理
-var infodetail = require('./routes/infodetail');
-var infolist = require('./routes/infolist');
-var listdetail = require('./routes/listdetail');
-var listinfo = require('./routes/listinfo');
-var create = require('./routes/create');
-var update = require('./routes/update');
-var remove = require('./routes/remove');
-var appdetail = require('./routes/appdetail');
-
+var interface = require('./routes/interface');
 var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -36,14 +28,7 @@ switch (app.get('env')) {
 }
 //同源策略
 //app.use('/server/api', require('cors'));
-app.use('/server/api/:PID/:APPID/:SUPERVICE/INFO', infodetail);
-app.use('/server/api/:PID/:APPID/:SUPERVICE/INFOLIST', infolist);
-app.use('/server/api/:PID/:APPID/:SUPERVICE/LISTDETAIL', listdetail);
-app.use('/server/api/:PID/:APPID/:SUPERVICE/LISTINFO', listinfo);
-app.use('/server/api/:PID/:APPID/:SUPERVICE/CREATE', create);
-app.use('/server/api/:PID/:APPID/:SUPERVICE/REMOVE', remove);
-app.use('/server/api/:PID/:APPID/:SUPERVICE/UPDATE', update);
-app.use('/server/api/:PID/:APPID/:SUPERVICE/APPDETAIL', appdetail);
+app.use('/server/api/:PID/:APPID/:SUPERVICE', impl);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

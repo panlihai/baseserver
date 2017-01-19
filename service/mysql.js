@@ -2,9 +2,10 @@
 /**
  * Created by panlihai on 2017-01-10.
  */
-var log = require('debug');
+var log = require('./log.js');
 var mysql = require('mysql');
 var cfg = require('../config.js');
+var sysapp = require('../models/system/sysapp.js');
 //连接池集合
 var pools = {};
 
@@ -38,10 +39,10 @@ var execSql = function (poolId, sql, callback) {
     var p = pools[poolId];
     p.getConnection(function (err, conn) {
         if (err) {
-            log.error(err);
+            log.err(err);
             callback(err, null, null);
         } else {
-            log.log(sql);
+            log.info(sql);
             conn.query(sql, function (qerr, vals, fields) {
                 conn.release();
                 callback(qerr, vals, fields);
@@ -60,7 +61,7 @@ var execSql = function (poolId, sql, callback) {
  * @param pageSize 页大小
  * @param callback 回调函数
  */
-var query = function (poolId, fields, tableName, where, pageNum, pageSize, callback) {
+var query = function (poolId, fields, tableName, where, pageNum, pageSize,orderby, callback) {
     if (!tableName) {
         callback('表名不能为空', null, null);
     }
@@ -74,6 +75,9 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize, callb
     if (pageNum && pageSize) {
         sql += " limit " + pageNum + "," + pageSize;
     }
+    if(orderby){
+        sql += " order by "+ orderby;
+    }
     execSql(poolId, sql, callback);
 };
 /**
@@ -85,7 +89,7 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize, callb
  * @param callback 回调函数
  */
 var queryOne = function (poolId, fields, tableName, where, callback) {
-    this.query(poolId, fields, tablaName, 0, 1, where, callback);
+    this.query(poolId, fields, tablaName, 0, 1, where,null, callback);
 };
 /**
  * 插入一条记录
@@ -104,7 +108,13 @@ var insertOne = function (poolId, tableName, fields, values, callback) {
      */
     var p = pools[poolId];
     p.getConnection(function (err, conn) {
-        conn.query('INSERT INTO ' + tableName + ' SET ' + fields, values, function (err, results, fields) {
+        if(err){
+            log.err(log);
+            return callback(err,null);
+        }
+        var insertSql ='INSERT INTO ' + tableName + ' SET ' + fields;
+        log.info(insertSql);
+        conn.query(insertSql,values, function (err, results, fields) {
             conn.release();
             if (err) {
                 log.err(err);
@@ -151,11 +161,14 @@ var initPools = function (config) {
                     database: item.DBNAME
                 });
                 pools[item.DSID] = p;
+                log.log(item.DSID + "数据源初始化成功");
             });
         });
+    //初始化应用程序
+    sysapp.initAll();
 };
 //封装异步调用
-var smooth = function(method) {
+var smooth = function (method) {
     return function () {
         var deferred = new Deferred();
         var args = Array.prototype.slice.call(arguments, 0);
@@ -164,6 +177,8 @@ var smooth = function(method) {
         return deferred.promise;
     };
 };
+
+module.exports.cfg = cfg;
 module.exports.smooth = smooth;
 module.exports.execSql = execSql;
 module.exports.queryOne = queryOne;

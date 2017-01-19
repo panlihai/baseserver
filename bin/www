@@ -2,31 +2,24 @@
 /**
  * Module dependencies.
  */
-
 var app = require('../app');
-var debug = require('debug')('baseserver:server');
 var http = require('http');
-var mysql = require('../service/mysql');
-var cfg = require('./config.js');
-
+var mysql = require('../service/mysql.js');
+var cfg = require('../config.js');
+var log = require('../service/log.js');
 function startServer() {
     /**
      * Get port from environment and store in Express.
      */
-
     var port = normalizePort(process.env.PORT || cfg.port);
     app.set('port', port);
-
     /**
      * Create HTTP server.
      */
-
     var server = http.createServer(app);
-
     /**
      * Listen on provided port, on all network interfaces.
      */
-
     server.listen(port);
     server.on('error', onError);
     server.on('listening', onListening);
@@ -34,10 +27,10 @@ function startServer() {
     app.use(function (req, res, next) {
         var domain = require('domain').create();
         domain.on('error', function (err) {
-            console.log('DOMAIN ERROR CAUGHT\n', err.stack);
+            debug('DOMAIN ERROR CAUGHT\n', err.stack);
             try {
                 setTimeout(function () {
-                    console.log('Failsafe shutdown.');
+                    log.log('Failsafe shutdown.');
                     process.exit(1);
                 }, 5000);
                 //从集群中断开
@@ -45,14 +38,14 @@ function startServer() {
                 if (worker) {
                     worker.disconnect();
                 }
-            }catch(err){
-                console.error('Express error mechanism failed.\n',err.stack);
+            } catch (err) {
+                console.error('Express error mechanism failed.\n', err.stack);
             }
             server.close();
-            try{
+            try {
                 next(err);
-            }catch(err){
-                console.error('Express error mechanism failed.\n',err.stack);
+            } catch (err) {
+                console.error('Express error mechanism failed.\n', err.stack);
             }
         });
         //向域中添加请求和响应对象
@@ -71,28 +64,23 @@ function startServer() {
             // named pipe
             return val;
         }
-
         if (port >= 0) {
             // port number
             return port;
         }
-
         return false;
     }
 
     /**
      * Event listener for HTTP server "error" event.
      */
-
     function onError(error) {
         if (error.syscall !== 'listen') {
             throw error;
         }
-
         var bind = typeof port === 'string'
             ? 'Pipe ' + port
             : 'Port ' + port;
-
         // handle specific listen errors with friendly messages
         switch (error.code) {
             case 'EACCES':
@@ -111,16 +99,22 @@ function startServer() {
     /**
      * Event listener for HTTP server "listening" event.
      */
-
     function onListening() {
         var addr = server.address();
         var bind = typeof addr === 'string'
             ? 'pipe ' + addr
             : 'port ' + addr.port;
-        debug('Listening on ' + bind);
+        log.log('Listening on ' + bind);
+        init();
     }
-    //初始化连接池
-    mysql.initPools(cfg.masterConfig);
+
+    /**
+     * 初始化系统
+     */
+    function init() {
+        //初始化连接池
+        mysql.initPools(cfg.masterConfig);
+    }
 }
 if (require.main == module) {
     //如果是应用程序直接运行，启动应用程序

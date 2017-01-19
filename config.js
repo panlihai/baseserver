@@ -5,7 +5,7 @@
  * 获取核心服务的连接池
  * @type {{host: string, port: number, user: string, password: string, database: string}}
  */
-exports = {
+module.exports = {
     masterConfig: {
         poolId: 'baseServer',
         host: 'yd.pcorp.cn',
