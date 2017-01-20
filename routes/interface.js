@@ -3,36 +3,39 @@
  */
 var express = require('express');
 var router = express.Router();
-
+var infolist = require('./infolist.js');
+var listinfo = require('./listinfo.js');
 /* GET home page. */
-router.post('/:ACT', function(req, res, next) {
-    switch(ACT){
+router.all('/:PID/:APPID/:SUPERVISE/:ACTION', function (req, res, next) {
+    switch (req.params.ACTION) {
         case 'CREATE':
-            res.render('create', { title: 'Express' });
+            res.render('create', {title: 'Express'});
             break;
         case 'INFO':
-            res.render('create', { title: 'Express' });
+            res.render('create', {title: 'Express'});
             break;
         case 'INFOLIST':
-            res.render('create', { title: 'Express' });
+            res.render('create', {title: 'Express'});
             break;
         case 'LISTINFO':
-            res.render('create', { title: 'Express' });
+            listinfo.getResult(req,res,function(result){
+                res.json(result);
+            });
             break;
         case 'LISTDETAIL':
-            res.render('create', { title: 'Express' });
+            res.render('create', {title: 'Express'});
             break;
         case 'REMOVE':
-            res.render('create', { title: 'Express' });
+            res.render('create', {title: 'Express'});
             break;
         case 'UPDATE':
-            res.render('create', { title: 'Express' });
+            res.render('create', {title: 'Express'});
             break;
         case 'APPDETAIL':
-            res.render('create', { title: 'Express' });
+            res.render('create', {title: 'Express'});
             break;
     }
-    res.render('create', { title: 'Express' });
+    
 });
 
 module.exports = router;

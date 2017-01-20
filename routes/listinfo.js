@@ -1,26 +1,34 @@
-var express = require('express');
-var router = express.Router();
-var log = require('../service/log.js');
 var sysapp = require('../models/system/sysapp.js');
-/* GET home page. */
-router.get('/', function (req, res, next) {
-    sysapp.findWithQuery(req.query.APPID, function (err, results) {
-        if (err) {
-            log.err(err);
-            req.JSON(err);
-        } else {
-            req.JSON(results);
-        }
-    })
-
-    // mysql.query(null, '*', 'SYS_APP', " ENABLE='Y' ", 0, 200, function (err, results, fields) {
-    //     if (err) {
-    //         console.log(err);
-    //     } else {
-    //         req.JSON(results);
-    //     }
-    // });
-
-});
-
-module.exports = router;
+var DateUtils = require('../util/DateUtils.js');
+var async = require('async');
+module.exports = {
+    getResult: function (req, res, callback) {
+        sysapp.findWithQueryPaging(req.params.APPID, req.query.WHERE, req.query.PAGENUM, req.query.PAGESIZE, req.query.ORDER, function (err, results) {
+            var json;
+            if (err) {
+                json = {
+                    "ACT": req.params.ACTTION,
+                    "CODE": '-1',
+                    "MSG": "系统异常，请参考:" + err,
+                    "TIMESTAMP": DateUtils.getTimestamp()
+                };
+            } else {
+                var data = results.DATA;
+                var listsize = 0;
+                if (data instanceof Array) {
+                    listsize = data.length
+                }
+                json = {
+                    "ACT": req.params.ACTION,
+                    "CODE": '0',
+                    "MSG": "请求成功",
+                    "TIMESTAMP": DateUtils.getTimestamp(),
+                    "TOTALSIZE": results.TOTALSIZE,
+                    "LISTSIZE": listsize,
+                    "DATA": data
+                };
+            }
+            res.json(json);
+        });
+    },
+};

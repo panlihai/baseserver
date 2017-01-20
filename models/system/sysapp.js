@@ -7,6 +7,7 @@ var appButtons = require('./sysappbuttons.js');
 var appLinks = require('./sysapplinks.js');
 var appInterfaces = require('./sysinterface.js');
 var appDics = require('./sysdic');
+var async = require('async');
 var log = require('../../service/log.js');
 var apps = {};
 
@@ -104,7 +105,67 @@ var initAppDetail = function (app) {
 };
 //get a app object by appid
 var getAppByAppid = function (appid) {
-    return this.apps[appid];
+    return apps[appid];
+};
+/**查询元数据的内容，按app配置信息
+ *
+ * @param appid 元数据
+ * @param where where条件
+ * @param callback 回调函数
+ * @returns {*}
+ */
+var findOneWithQuery = function (appid, where, callback) {
+    var app = getAppByAppid(appid);
+    if (!app) {
+        return callback("不存在的元数据", null);
+    }
+    mysql.queryOne(app.DATASOURCE, " * ", app.MAINTABLE, where, function (err, result) {
+        if (err) {
+            log.err(err);
+            return callback(err, null);
+        }
+        callback(err, result);
+    });
+}
+/**
+ * 查询元数据明细表内容。
+ * @param result
+ * @param details
+ * @param callback
+ */
+var findOneDetailsWithObj = function (result, details, callback) {
+    async.map(details, function (detail, cb) {
+        findWithQueryPaging(detail.APPID, detail.WHERE, detail.PAGENUM, detail.PAGESIZE, detail.ORDER,
+            function (err, detailResult) {
+                result[detail.APPID] = detailResult;
+                cb(err, detailResult);
+            })
+    }, function (err, results) {
+        callback(err, result);
+    });
+};
+/**查询元数据的内容，按app配置信息
+ *
+ * @param appid 元数据
+ * @param where where条件
+ * @param details 子表明细内容
+ * @param callback 回调函数
+ * @returns {*}
+ */
+var findOneDetailsWithQuery = function (appid, where, details, callback) {
+    findOneWithQuery(appid, where, function (err, result) {
+        if (err) {
+            log.err(err);
+            return callback(err, null);
+        }
+        findOneDetailsWithObj(result, details, function (err, results) {
+            if (err) {
+                log.err(err);
+            }
+            return callback(err, result);
+        })
+    });
+
 };
 /**查询元数据的内容，按app配置信息
  *
@@ -116,29 +177,71 @@ var getAppByAppid = function (appid) {
  * @param callback 回调函数
  * @returns {*}
  */
-var findWithQuery = function (appid, where,pageNum,pageSize,orderby,callback) {
+var findWithQueryPaging = function (appid, where, pageNum, pageSize, orderby, callback) {
     var app = getAppByAppid(appid);
-    if(!app){
-        return callback("不存在的元数据",null);
+    if (!app) {
+        return callback("不存在的元数据", null);
     }
-    if(!pageNum){
+    if (!pageNum) {
         pageNum = 0;
     }
-    if(!pageSize){
+    if (!pageSize) {
         pageSize = app.PAGESIZE;
     }
-    if(!orderby&&app.SORT){
+    if (!orderby && app.SORT) {
         orderby = app.SORTBY;
     }
-    mysql.query(app.DATASOURCE," * ",app.MAINTABLE,where,pageNum,pageSize,orderby,function(err,results){
-        if(err){
-            log.err(log);
-            return callback(err,null);
+    mysql.queryPaging(app.DATASOURCE, " * ", app.MAINTABLE, where, pageNum, pageSize, orderby, function (err, results) {
+        if (err) {
+            log.err(err);
+            return callback(err, null);
         }
-        callback(err,results);
+        callback(err, results);
     });
 };
-module.exports.findWithQuery = findWithQuery;
+/**查询元数据的内容，按app配置信息
+ *
+ * @param appid 元数据
+ * @param where where条件
+ * @param pageNum 分页数
+ * @param pageSize 分页大小
+ * @param orderby 排序
+ * @param details 子表详情
+ * @param callback 回调函数
+ * @returns {*}
+ */
+var findListdetailWithQueryPaging = function (appid, where, pageNum, pageSize, orderby, details, callback) {
+    var app = getAppByAppid(appid);
+    if (!app) {
+        return callback("不存在的元数据", null);
+    }
+    if (!pageNum) {
+        pageNum = 0;
+    }
+    if (!pageSize) {
+        pageSize = app.PAGESIZE;
+    }
+    if (!orderby && app.SORT) {
+        orderby = app.SORTBY;
+    }
+    mysql.queryPaging(app.DATASOURCE, " * ", app.MAINTABLE, where, pageNum, pageSize, orderby, function (err, results) {
+        if (err) {
+            log.err(err);
+            return callback(err, null);
+        }
+        async.map(results, function (result, cb) {
+            findOneDetailsWithObj(result, details, function (err, detailResults) {
+                cb(err, detailResults);
+            })
+        }, function (err, detailResult) {
+            callback(err, results);
+        });
+    });
+};
+module.exports.findOneWithQuery = findOneWithQuery;
+module.exports.findOneDetailsWithQuery = findOneDetailsWithQuery;
+module.exports.findWithQueryPaging = findWithQueryPaging;
+module.exports.findListdetailWithQueryPaging = findListdetailWithQueryPaging;
 module.exports.apps = apps;
 module.exports.initAll = initAll;
 module.exports.initByAppid = initByAppid;

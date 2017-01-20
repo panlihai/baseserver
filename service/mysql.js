@@ -3,6 +3,7 @@
  * Created by panlihai on 2017-01-10.
  */
 var log = require('./log.js');
+var async = require('async');
 var mysql = require('mysql');
 var cfg = require('../config.js');
 var sysapp = require('../models/system/sysapp.js');
@@ -42,7 +43,7 @@ var execSql = function (poolId, sql, callback) {
             log.err(err);
             callback(err, null, null);
         } else {
-            log.info(sql);
+            log.log(sql);
             conn.query(sql, function (qerr, vals, fields) {
                 conn.release();
                 callback(qerr, vals, fields);
@@ -61,7 +62,7 @@ var execSql = function (poolId, sql, callback) {
  * @param pageSize 页大小
  * @param callback 回调函数
  */
-var query = function (poolId, fields, tableName, where, pageNum, pageSize,orderby, callback) {
+var query = function (poolId, fields, tableName, where, pageNum, pageSize, orderby, callback) {
     if (!tableName) {
         callback('表名不能为空', null, null);
     }
@@ -72,11 +73,11 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize,orderb
     if (!where && where.length > 0) {
         sql += 'where ' + where;
     }
+    if (orderby) {
+        sql += " order by " + orderby;
+    }
     if (pageNum && pageSize) {
         sql += " limit " + pageNum + "," + pageSize;
-    }
-    if(orderby){
-        sql += " order by "+ orderby;
     }
     execSql(poolId, sql, callback);
 };
@@ -89,8 +90,64 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize,orderb
  * @param callback 回调函数
  */
 var queryOne = function (poolId, fields, tableName, where, callback) {
-    this.query(poolId, fields, tablaName, 0, 1, where,null, callback);
+    this.query(poolId, fields, tablaName, 0, 1, where, null, callback);
 };
+/**
+ * 获取分页数量
+ * @param poolId
+ * @param fields
+ * @param tableName
+ * @param where
+ * @param callback
+ */
+var queryCount = function (poolId, tableName, where, callback) {
+    if (!tableName) {
+        callback('表名不能为空', null, null);
+    }
+    var sql = 'select count(*) COUNT from ' + tableName + ' ';
+    if (!where && where.length > 0) {
+        sql += 'where ' + where;
+    }
+    execSql(poolId, sql, function(err,result){
+        if(err){
+            log.err(err);
+            return callback(err,null);
+        }else{
+            return callback(null,result[0].COUNT);
+        }
+    });
+};
+/**
+ * 获取分页数据，包含总记录数
+ * @param poolId
+ * @param fields
+ * @param tableName
+ * @param where
+ * @param pageNum
+ * @param pageSize
+ * @param orderby
+ * @param callback
+ */
+var queryPaging = function (poolId, fields, tableName, where, pageNum, pageSize, orderby, callback) {
+    async.parallel({
+        DATA: function (cb) {
+            query(poolId,fields,tableName,where,pageNum,pageSize,orderby,function(err,result){
+                cb(err, result);
+            });
+        },
+        TOTALSIZE: function (cb) {
+            queryCount(poolId,tableName,where,function(err,result){
+                cb(err, result);
+            });
+        }
+    }, function (err, results) {
+        if (err) {
+            log.err(err);
+        } else {
+            callback(null,results);
+        }
+    });
+}
 /**
  * 插入一条记录
  * @param poolId 连接池id
@@ -108,13 +165,13 @@ var insertOne = function (poolId, tableName, fields, values, callback) {
      */
     var p = pools[poolId];
     p.getConnection(function (err, conn) {
-        if(err){
+        if (err) {
             log.err(log);
-            return callback(err,null);
+            return callback(err, null);
         }
-        var insertSql ='INSERT INTO ' + tableName + ' SET ' + fields;
+        var insertSql = 'INSERT INTO ' + tableName + ' SET ' + fields;
         log.info(insertSql);
-        conn.query(insertSql,values, function (err, results, fields) {
+        conn.query(insertSql, values, function (err, results, fields) {
             conn.release();
             if (err) {
                 log.err(err);
@@ -177,11 +234,21 @@ var smooth = function (method) {
         return deferred.promise;
     };
 };
-
+//默认的内核配置资源
 module.exports.cfg = cfg;
+//默认的异步调用方法
 module.exports.smooth = smooth;
+//sql执行器
 module.exports.execSql = execSql;
+//查询一条记录
 module.exports.queryOne = queryOne;
+//查询所有记录 支持分页
 module.exports.query = query;
+//根据条件查询分页数
+module.exports.queryCount = queryCount;
+//根据分页情况获取分页数及记录
+module.exports.queryPaging = queryPaging;
+//插入数据
 module.exports.insertOne = insertOne;
+//初始化连接池
 module.exports.initPools = initPools;
