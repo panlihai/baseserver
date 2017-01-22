@@ -106,22 +106,23 @@ var queryOne = function (poolId, fields, tableName, where, callback) {
  * @param callback
  */
 var queryCount = function (poolId, tableName, where, callback) {
-    if (!tableName) {
-        callback('表名不能为空', null, null);
-    }
-    var sql = 'select count(*) COUNT from ' + tableName + ' ';
-    if (!where && where.length > 0) {
-        sql += 'where ' + where;
-    }
-    execSql(poolId, sql, function (err, result) {
-        if (err) {
-            log.err(err);
-            return callback(err, null);
-        } else {
-            return callback(null, result[0].COUNT);
+        if (!tableName) {
+            callback('表名不能为空', null, null);
         }
-    });
-};
+        var sql = 'select count(*) COUNT from ' + tableName + ' ';
+        if (where && where.length > 0) {
+            sql += 'where ' + where;
+        }
+        execSql(poolId, sql, function (err, result) {
+            if (err) {
+                log.err(err);
+                return callback(err, null);
+            } else {
+                return callback(null, result[0].COUNT);
+            }
+        });
+    }
+    ;
 /**
  * 获取分页数据，包含总记录数
  * @param poolId

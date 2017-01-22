@@ -149,6 +149,8 @@ var findOneDetailsWithQuery = function (appid, where, details, callback) {
             log.err(err);
             return callback(err, null);
         }
+        log.log(details);
+        details = JSON.parse(details);
         findOneDetailsWithObj(result, details, function (err, results) {
             if (err) {
                 log.err(err);
