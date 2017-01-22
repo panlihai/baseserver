@@ -7,6 +7,7 @@ var async = require('async');
 var mysql = require('mysql');
 var cfg = require('../config.js');
 var sysapp = require('../models/system/sysapp.js');
+var sysdic = require('../models/system/sysdic.js');
 //连接池集合
 var pools = {};
 
@@ -39,14 +40,18 @@ var execSql = function (poolId, sql, callback) {
      */
     var p = pools[poolId];
     p.getConnection(function (err, conn) {
+        log.log(sql);
         if (err) {
             log.err(err);
             callback(err, null, null);
         } else {
-            log.log(sql);
             conn.query(sql, function (qerr, vals, fields) {
                 conn.release();
-                callback(qerr, vals, fields);
+                if (qerr) {
+                    log.err(qerr);
+                    return callback(qerr, null, null);
+                }
+                return callback(qerr, vals, fields);
             });
         }
     });
@@ -70,7 +75,7 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize, order
         fields = " * ";
     }
     var sql = 'select ' + fields + ' from ' + tableName + ' ';
-    if (!where && where.length > 0) {
+    if (where && where.length > 0) {
         sql += 'where ' + where;
     }
     if (orderby) {
@@ -90,7 +95,7 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize, order
  * @param callback 回调函数
  */
 var queryOne = function (poolId, fields, tableName, where, callback) {
-    this.query(poolId, fields, tablaName, 0, 1, where, null, callback);
+    this.query(poolId, fields, tableName, where, 0, 1, null, callback);
 };
 /**
  * 获取分页数量
@@ -108,12 +113,12 @@ var queryCount = function (poolId, tableName, where, callback) {
     if (!where && where.length > 0) {
         sql += 'where ' + where;
     }
-    execSql(poolId, sql, function(err,result){
-        if(err){
+    execSql(poolId, sql, function (err, result) {
+        if (err) {
             log.err(err);
-            return callback(err,null);
-        }else{
-            return callback(null,result[0].COUNT);
+            return callback(err, null);
+        } else {
+            return callback(null, result[0].COUNT);
         }
     });
 };
@@ -131,12 +136,12 @@ var queryCount = function (poolId, tableName, where, callback) {
 var queryPaging = function (poolId, fields, tableName, where, pageNum, pageSize, orderby, callback) {
     async.parallel({
         DATA: function (cb) {
-            query(poolId,fields,tableName,where,pageNum,pageSize,orderby,function(err,result){
+            query(poolId, fields, tableName, where, pageNum, pageSize, orderby, function (err, result) {
                 cb(err, result);
             });
         },
         TOTALSIZE: function (cb) {
-            queryCount(poolId,tableName,where,function(err,result){
+            queryCount(poolId, tableName, where, function (err, result) {
                 cb(err, result);
             });
         }
@@ -144,7 +149,7 @@ var queryPaging = function (poolId, fields, tableName, where, pageNum, pageSize,
         if (err) {
             log.err(err);
         } else {
-            callback(null,results);
+            callback(null, results);
         }
     });
 }
@@ -223,6 +228,7 @@ var initPools = function (config) {
         });
     //初始化应用程序
     sysapp.initAll();
+    sysdic.initAll();
 };
 //封装异步调用
 var smooth = function (method) {

@@ -23,7 +23,6 @@ var initAll = function () {
     var appSql = "select " + fields + " from " + tableName + " where ENABLE='Y'";
     mysql.execSql(mysql.cfg.masterConfig.poolId, appSql, function (err, results) {
         if (err) {
-            log.err("数据源初始化异常，请校验连接池配置信息是否正常");
             log.err(err);
             return;
         }
@@ -65,9 +64,9 @@ var initAppDetail = function (app) {
     //加载字段内容
     appFields.initByAppid(app.APPID, function (err, results) {
         if (err) {
-            log.error(err);
+            log.err(err);
         } else {
-            apps[app.APPID].appfields = results;
+            app.appfields = results;
         }
     });
     //加载appButtons
@@ -75,7 +74,7 @@ var initAppDetail = function (app) {
         if (err) {
             log.err(err);
         } else {
-            apps[app.APPID].appbuttons = results;
+            app.appbuttons = results;
         }
     });
     //加载appLinks
@@ -83,7 +82,7 @@ var initAppDetail = function (app) {
         if (err) {
             log.err(err);
         } else {
-            apps[app.APPID].applinks = results;
+            app.applinks = results;
         }
     });
     //加载appInterfaces
@@ -91,15 +90,7 @@ var initAppDetail = function (app) {
         if (err) {
             log.err(err);
         } else {
-            apps[app.APPID].appinterfaces = results;
-        }
-    });
-    //加载appDics
-    appDics.initByAppid(app.APPID, function (err, results) {
-        if (err) {
-            log.err(err);
-        } else {
-            apps[app.APPID].appinterfaces = results;
+            app.appinterfaces = results;
         }
     });
 };

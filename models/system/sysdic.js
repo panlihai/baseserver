@@ -6,32 +6,36 @@ var mysql = require('../../service/mysql.js');
 var log = require('../../service/log.js');
 var sysDicDetails = require('./sysdicdetail.js');
 module.exports = {
+    dics: {},
     //tablename
     tableName: 'SYS_DIC',
     //the fields string
     fields: '`ID`, `DICID`, `DICNAME`, `DICTYPE`',
     //init by appid
-    initByAppid: function (appId, callback) {
+    initAll: function () {
         /**
          * 初始化元數據字段
          */
-        var sql = "select " + this.fields + " from " + this.tableName + " where dicid in (select diccode from sys_appfields where APPID='" + appId + "')";
+        var sql = "select " + this.fields + " from " + this.tableName;
         mysql.execSql(mysql.cfg.masterConfig.poolId, sql, function (err, results) {
             if (err) {
-                log.err("数据源初始化异常，请校验连接池配置信息是否正常");
                 log.err(err);
-                callback(err, null);
+                return callback(err, null);
             } else {
-                var initsFunc = [];
-                async.eachLimit(results, 8, function (result, callback) {
-                    sysDicDetails.initByDicCode(result.DICID, function (err, backResult) {
-                        if (err) {
-                            log.err(err);
-                        } else {
-                            callback(null, backResult);
-                        }
-                    });
-                })
+                results.forEach(function (dic) {
+                    module.exports.dics[dic.DICID] = dic;
+                    if (dic.DICTYPE == 'LISTVALUE') {
+                        sysDicDetails.initByDicCode(dic.DICID, function (err, dicid, backResult) {
+                            if (err) {
+                                log.err(err);
+                            } else {
+                                module.exports.dics[dicid].dicdetail = backResult;
+                            }
+                        });
+                    } else {
+
+                    }
+                });
             }
         })
     },
