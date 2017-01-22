@@ -157,8 +157,8 @@ router.all('/:PID/:APPID/:SUPERVISE/:ACTION', function (req, res, next) {
                 res.json(result);
             });
             break;
-
+        default:
+            res.send(404,'Error occureed：Api \''+req.params.ACTION+'\' is not finded.')
     }
-
 });
 module.exports = router;

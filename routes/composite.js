@@ -1,4 +1,5 @@
 var sysapp = require('../models/system/sysapp.js');
+var DateUtils = require('../util/DateUtils.js');
 var async = require('async');
 module.exports = {
   getResult: function (req, callback) {
@@ -6,17 +7,17 @@ module.exports = {
       var json;
       if (err) {
         json = {
-          "ACT": "INFOLIST",
+          "ACT": req.params.ACTION,
           "MSG": "系统异常，请参考:" + err,
-          "TIMESTAMP": req.query.TIMESTAMP,
+          "TIMESTAMP": DateUtils.getTimestamp(),
           "CODE": '-1'
         };
       } else {
         //res.render('create', {title: 'Express'});
         json = {
-          "ACT": "INFOLIST",
+          "ACT": req.params.ACTION,
           "MSG": "请求成功",
-          "TIMESTAMP": req.query.TIMESTAMP,
+          "TIMESTAMP": DateUtils.getTimestamp(),
           "DATA": results,
           "CODE": '0'
         };
