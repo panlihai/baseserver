@@ -113,7 +113,7 @@ function startServer() {
      */
     function init() {
         //初始化连接池
-        mysql.initPools(cfg.masterConfig);
+        mysql.initPools(cfg.masterConfig);        
     }
 }
 if (require.main == module) {

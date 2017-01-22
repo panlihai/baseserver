@@ -16,11 +16,10 @@ module.exports = {
         var sql = "select " + this.fields + " from " + this.tableName + " where DICID='" + dicId + "'";
         mysql.execSql(mysql.cfg.masterConfig.poolId, sql, function (err, results) {
             if (err) {
-                log.err("数据源初始化异常，请校验连接池配置信息是否正常");
                 log.err(err);
-                callback(err, null);
+                callback(err, dicId, null);
             } else {
-                callback(null, results);
+                callback(null, dicId, results);
             }
         });
     },

@@ -3,7 +3,7 @@ var DateUtils = require('../util/DateUtils.js');
 var async = require('async');
 module.exports = {
     getResult: function (req, callback) {
-        sysapp.findOneDetailsWithQuery(req.params.APPID, req.query.WHERE, req.query.PAGENUM, req.query.PAGESIZE, req.query.ORDER, function (err, results) {
+        sysapp.findOneDetailsWithQuery(req.params.APPID, req.query.WHERE, req.query.LISTDETAILS, function (err, results) {
             var json;
             if (err) {
                 json = {
@@ -21,7 +21,7 @@ module.exports = {
                     "CODE": '0'
                 };
             }
-            res.json(json);
+            callback(json);
         });
     }
 };
