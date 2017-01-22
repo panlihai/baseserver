@@ -2,7 +2,7 @@ var sysapp = require('../models/system/sysapp.js');
 var DateUtils = require('../util/DateUtils.js');
 var async = require('async');
 module.exports = {
-    getResult: function (req, res, callback) {
+    getResult: function (req,callback) {
         sysapp.findWithQueryPaging(req.params.APPID, req.query.WHERE, req.query.PAGENUM, req.query.PAGESIZE, req.query.ORDER, function (err, results) {
             var json;
             if (err) {
@@ -28,7 +28,7 @@ module.exports = {
                     "DATA": data
                 };
             }
-            res.json(json);
+            return callback(json);
         });
     },
 };

@@ -23,5 +23,5 @@ module.exports = {
       }
       res.json(json);
     });
-  }
+  },
 };
