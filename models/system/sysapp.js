@@ -7,6 +7,7 @@ var appButtons = require('./sysappbuttons.js');
 var appLinks = require('./sysapplinks.js');
 var appInterfaces = require('./sysinterface.js');
 var SysappUtils = require('../../util/SysappUtils.js');
+var ToolUtils = require('../../util/ToolUtils.js');
 var appDics = require('./sysdic');
 var async = require('async');
 var log = require('../../service/log.js');
@@ -99,6 +100,18 @@ var initAppDetail = function (app) {
 var getAppByAppid = function (appid) {
     return apps[appid];
 };
+var insert =function(appid,data){
+    var app = apps[appid];
+    var fields = app.appfields;
+    var sql = "insert into "+app.MAINTABLE+" set ID=?,";
+    var value = [ToolUtils.getUUID()];
+    fields.forEach(function(field){
+        if(data.hasOwnProperty(field.FIELDCODE)){
+            sql+="?,";
+            value.push(data[field.FIELDCODE]);
+        }
+    });
+};
 /**查询元数据的内容，按app配置信息
  *
  * @param appid 元数据
@@ -118,7 +131,7 @@ var findOneWithQuery = function (appid, where, callback) {
         }
         callback(err, result);
     });
-}
+};
 /**
  * 查询元数据明细表内容。
  * @param result
@@ -245,6 +258,7 @@ var findListdetailWithQueryPaging = function (appid, where, pageNum, pageSize, o
         });
     });
 };
+module.exports.insert = insert;
 module.exports.findOneWithQuery = findOneWithQuery;
 module.exports.findOneDetailsWithQuery = findOneDetailsWithQuery;
 module.exports.findWithQueryPaging = findWithQueryPaging;
