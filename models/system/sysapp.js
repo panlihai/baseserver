@@ -6,6 +6,7 @@ var appFields = require('./sysappfields.js');
 var appButtons = require('./sysappbuttons.js');
 var appLinks = require('./sysapplinks.js');
 var appInterfaces = require('./sysinterface.js');
+var SysappUtils = require('../../util/SysappUtils.js');
 var appDics = require('./sysdic');
 var async = require('async');
 var log = require('../../service/log.js');
@@ -124,14 +125,26 @@ var findOneWithQuery = function (appid, where, callback) {
  * @param details
  * @param callback
  */
-var findOneDetailsWithObj = function (result, details, callback) {
+var findOneDetailsWithObj = function (mainAppId, result, details, callback) {
+    //获取主元数据对象
+    var mainApp = apps[mainAppId];
+    //並發執行
     async.map(details, function (detail, cb) {
-        findWithQueryPaging(detail.APPID, detail.WHERE, detail.PAGENUM, detail.PAGESIZE, detail.ORDER,
+        //获取appid关联appid并根据关联条件生成关联sql条件
+        var linkapp = appLinks.getLinkAppObj(mainApp, detail.APPID);
+        //生成sql条件
+        var where = ' 1=1 ';
+        where += SysappUtils.getSqlWhereByLinkApp(mainApp, detail.APPID, linkapp);
+        if(detail.WHERE&&detail.WHERE.length!=0){
+            where +=' and '+ detail.WHERE;
+        }
+        findWithQueryPaging(detail.APPID, where, detail.PAGENUM, detail.PAGESIZE, detail.ORDER,
             function (err, detailResult) {
                 result[detail.APPID] = detailResult;
                 cb(err, detailResult);
-            })
+            });
     }, function (err, results) {
+        log.log(results);
         callback(err, result);
     });
 };
@@ -149,16 +162,17 @@ var findOneDetailsWithQuery = function (appid, where, details, callback) {
             log.err(err);
             return callback(err, null);
         }
-        log.log(details);
         details = JSON.parse(details);
-        findOneDetailsWithObj(result, details, function (err, results) {
-            if (err) {
-                log.err(err);
-            }
-            return callback(err, result);
-        })
+        if (result.length > 0) {
+            findOneDetailsWithObj(appid, result[0], details, function (err, results) {
+                if (err) {
+                    log.err(err);
+                    return callback(err, null);
+                }
+                return callback(err, results);
+            });
+        }
     });
-
 };
 /**查询元数据的内容，按app配置信息
  *
@@ -223,7 +237,7 @@ var findListdetailWithQueryPaging = function (appid, where, pageNum, pageSize, o
             return callback(err, null);
         }
         async.map(results, function (result, cb) {
-            findOneDetailsWithObj(result, details, function (err, detailResults) {
+            findOneDetailsWithObj(appid, result, details, function (err, detailResults) {
                 cb(err, detailResults);
             })
         }, function (err, detailResult) {

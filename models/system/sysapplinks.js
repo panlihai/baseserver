@@ -28,5 +28,18 @@ module.exports = {
     //insert default by appId
     insertDefault: function (appId) {
 
+    },
+    //get linkapp by mainAppid && appId
+    getLinkAppObj:function(mainApp,appId){
+        var links = mainApp.applinks;
+        var linkapp;
+        for(var i=0;i<links.length;i++){
+            var applink = links[i];
+            if(applink.ITEMAPP==appId){
+                linkapp = applink;
+                break;
+            }
+        }
+        return linkapp;
     }
 };

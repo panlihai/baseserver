@@ -2,6 +2,7 @@
  * Created by panlihai on 2017-01-19.
  */
 var express = require('express');
+var log = require('../service/log.js');
 var router = express.Router();
 var create = require('./create.js');
 var update = require('./update.js');

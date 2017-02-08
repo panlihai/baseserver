@@ -20,7 +20,7 @@ module.exports = {
                     "DATA": results,
                     "CODE": '0'
                 };
-            }
+            }            
             callback(json);
         });
     }

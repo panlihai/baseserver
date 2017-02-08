@@ -81,7 +81,7 @@ var query = function (poolId, fields, tableName, where, pageNum, pageSize, order
     if (orderby) {
         sql += " order by " + orderby;
     }
-    if (pageNum && pageSize) {
+    if (pageNum != null && pageSize != null) {
         sql += " limit " + pageNum + "," + pageSize;
     }
     execSql(poolId, sql, callback);
@@ -150,6 +150,11 @@ var queryPaging = function (poolId, fields, tableName, where, pageNum, pageSize,
         if (err) {
             log.err(err);
         } else {
+            if (results.DATA) {
+                results.LISTSIZE = results.DATA.length;
+            }
+            results.PAGESIZE = pageSize;
+            results.PAGENUM = pageNum;
             callback(null, results);
         }
     });
