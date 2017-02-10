@@ -5,6 +5,7 @@
 var log = require('./log.js');
 var async = require('async');
 var mysql = require('mysql');
+var Sqlstring = require('sqlstring');
 var cfg = require('../config.js');
 var sysapp = require('../models/system/sysapp.js');
 var sysdic = require('../models/system/sysdic.js');
@@ -106,23 +107,22 @@ var queryOne = function (poolId, fields, tableName, where, callback) {
  * @param callback
  */
 var queryCount = function (poolId, tableName, where, callback) {
-        if (!tableName) {
-            callback('表名不能为空', null, null);
-        }
-        var sql = 'select count(*) COUNT from ' + tableName + ' ';
-        if (where && where.length > 0) {
-            sql += 'where ' + where;
-        }
-        execSql(poolId, sql, function (err, result) {
-            if (err) {
-                log.err(err);
-                return callback(err, null);
-            } else {
-                return callback(null, result[0].COUNT);
-            }
-        });
+    if (!tableName) {
+        callback('表名不能为空', null, null);
     }
-    ;
+    var sql = 'select count(*) COUNT from ' + tableName + ' ';
+    if (where && where.length > 0) {
+        sql += 'where ' + where;
+    }
+    execSql(poolId, sql, function (err, result) {
+        if (err) {
+            log.err(err);
+            return callback(err, null);
+        } else {
+            return callback(null, result[0].COUNT);
+        }
+    });
+};
 /**
  * 获取分页数据，包含总记录数
  * @param poolId
@@ -162,12 +162,10 @@ var queryPaging = function (poolId, fields, tableName, where, pageNum, pageSize,
 /**
  * 插入一条记录
  * @param poolId 连接池id
- * @param tableName 表名
- * @param fields 字段的个数，有几个字段就几个问号
- * @param values 字段值对象{字段名称：字段值,字段名称：字段值}
+ * @param insertSql 标准sql
  * @param callback 回调函数
  */
-var insertOne = function (poolId, tableName, fields, values, callback) {
+var insertOne = function (poolId, insertSql, callback) {
     if (!pools[poolId]) {
         poolId = cfg.masterConfig.poolId;
     }
@@ -180,16 +178,149 @@ var insertOne = function (poolId, tableName, fields, values, callback) {
             log.err(log);
             return callback(err, null);
         }
-        var insertSql = 'INSERT INTO ' + tableName + ' SET ' + fields;
         log.info(insertSql);
-        conn.query(insertSql, values, function (err, results, fields) {
+        conn.query(insertSql, function (err, results, fields) {
             conn.release();
             if (err) {
                 log.err(err);
-                throw err;
+                callback(err, null);
             } else {
-                log.log(result.toString());
-                callback(qerr, results, fields);
+                log.log(results.toString());
+                callback(err, results, fields);
+            }
+        })
+    })
+};
+/**
+ * 更新一条记录
+ * @param poolId 连接池id
+ * @param updateSql 标准sql
+ * @param callback 回调函数
+ */
+var updateOne = function (poolId, updateSql, callback) {
+    if (!pools[poolId]) {
+        poolId = cfg.masterConfig.poolId;
+    }
+    /**
+     * 获取连接池并从连接池中获取链接，并执行sql
+     */
+    var p = pools[poolId];
+    p.getConnection(function (err, conn) {
+        if (err) {
+            log.err(log);
+            return callback(err, null);
+        }
+        log.info(updateSql);
+        conn.query(updateSql, function (err, results, fields) {
+            conn.release();
+            if (err) {
+                log.err(err);
+                callback(err, null);
+            } else {
+                log.log(results.toString());
+                callback(err, results, fields);
+            }
+        })
+    })
+};
+/**
+ * 插入多条记录
+ * @param poolId 连接池id
+ * @param updateSqls 标准sql
+ * @param callback 回调函数
+ */
+var updateMany = function (poolId, updateSqls, callback) {
+    if (!pools[poolId]) {
+        poolId = cfg.masterConfig.poolId;
+    }
+    /**
+     * 获取连接池并从连接池中获取链接，并执行sql
+     */
+    var p = pools[poolId];
+    p.getConnection({multipleStatements: true}, function (err, conn) {
+        if (err) {
+            log.err(log);
+            return callback(err, null);
+        }
+        log.info(updateSqls);
+        var sql = updateSqls.join(";");
+        sql = sql.substring(0, sql.length - 1);
+        conn.query(sql, function (err, results, fields) {
+            conn.release();
+            if (err) {
+                log.err(err);
+                callback(err, null);
+            } else {
+                log.log(results.toString());
+                callback(err, results, fields);
+            }
+        })
+    })
+};
+/**
+
+ /**
+ * 删除一条记录
+ * @param poolId 连接池id
+ * @param deleteSql 标准sql
+ * @param callback 回调函数
+ */
+var removeOne = function (poolId, deleteSql, callback) {
+    if (!pools[poolId]) {
+        poolId = cfg.masterConfig.poolId;
+    }
+    /**
+     * 获取连接池并从连接池中获取链接，并执行sql
+     */
+    var p = pools[poolId];
+    p.getConnection(function (err, conn) {
+        if (err) {
+            log.err(log);
+            return callback(err, null);
+        }
+        log.info(updateSql);
+        conn.query(updateSql, function (err, results, fields) {
+            conn.release();
+            if (err) {
+                log.err(err);
+                callback(err, null);
+            } else {
+                log.log(results.toString());
+                callback(err, results, fields);
+            }
+        })
+    })
+};
+/**
+ * 删除多条记录
+ * @param poolId 连接池id
+ * @param deleteSqls 标准sql
+ * @param callback 回调函数
+ */
+var removeMany = function (poolId, deleteSqls, callback) {
+    if (!pools[poolId]) {
+        poolId = cfg.masterConfig.poolId;
+    }
+    /**
+     * 获取连接池并从连接池中获取链接，并执行sql
+     */
+    var p = pools[poolId];
+    p.getConnection({multipleStatements: true}, function (err, conn) {
+        if (err) {
+            log.err(log);
+            return callback(err, null);
+        }
+        log.info(deleteSqls);
+        var sql = deleteSqls.join(";");
+        sql = sql.substring(0, sql.length - 1);
+        conn.query(sql, function (err, results, fields) {
+            conn.release();
+            if (err) {
+                log.err(err);
+                callback(err, null);
+            } else {
+                log.log(results.toString());
+                callback(err, results, fields);
             }
         })
     })
@@ -262,5 +393,13 @@ module.exports.queryCount = queryCount;
 module.exports.queryPaging = queryPaging;
 //插入数据
 module.exports.insertOne = insertOne;
+//更新一条数据
+module.exports.updateOne = updateOne;
+//更新多条数据
+module.exports.updateMany = updateMany;
+//删除一条数据
+module.exports.remove = removeOne;
+//删除多条数据
+module.exports.removeMany = removeMany;
 //初始化连接池
 module.exports.initPools = initPools;

@@ -1,7 +1,8 @@
-/**
+/**(
  * Created by panlihai on 2017-01-13.
  */
 var mysql = require('../../service/mysql.js');
+var Sqlstring = require('sqlstring');
 var appFields = require('./sysappfields.js');
 var appButtons = require('./sysappbuttons.js');
 var appLinks = require('./sysapplinks.js');
@@ -100,17 +101,119 @@ var initAppDetail = function (app) {
 var getAppByAppid = function (appid) {
     return apps[appid];
 };
-var insert =function(appid,data){
+/**
+ * 插入数据，支持多条数据的插入格式为DATA:[{字段1:值1,字段2:值2},{字段1:值1}]
+ * @param appid 元数据编码
+ * @param datas 值字符串
+ * @param callback 回调函数，加入默认值后，原样返回。
+ */
+var insert = function (appid, datas, callback) {
     var app = apps[appid];
     var fields = app.appfields;
-    var sql = "insert into "+app.MAINTABLE+" set ID=?,";
-    var value = [ToolUtils.getUUID()];
-    fields.forEach(function(field){
-        if(data.hasOwnProperty(field.FIELDCODE)){
-            sql+="?,";
-            value.push(data[field.FIELDCODE]);
+    var sql = "insert into " + app.MAINTABLE + "(";
+    fields.forEach(function (field) {
+        sql += field.FIELDCODE + ",";
+    });
+    sql = sql.substring(0, sql.length - 1);
+    sql += ") values";
+    datas.forEach(function (data) {
+        sql += "(";
+        fields.forEach(function (field) {
+            if (data.hasOwnProperty(field.FIELDCODE)) {
+                sql += Sqlstring.escape(data[field.FIELDCODE]) + ",";
+            } else if (field.FIELDCODE == 'ID') {
+                var uuid = ToolUtils.getUUID();
+                sql += "'" + uuid + "',";
+                data.ID = uuid;
+            } else {
+                sql += "null,";
+            }
+        });
+        sql = sql.substring(0, sql.length - 1);
+        sql += "),";
+    });
+    sql = sql.substring(0, sql.length - 1);
+    mysql.insertOne(app.DATASOURCE, sql, function (err, results, fields) {
+        if (err) {
+            log.err(err);
+            return callback(err, null);
+        }
+        callback(null, datas);
+    });
+};
+/**
+ * 更新数据，支持多条数据的更新，更新格式为DATA:[{字段1:值1,字段2:值2},{字段1:值1}],其中字段必须包含ID或WHERE，否则忽略本对象更新
+ * @param appid
+ * @param datas 值字符串 必须包含id 或者WHERE
+ * @param callback
+ */
+var update = function (appid, datas, callback) {
+    var app = apps[appid];
+    var fields = app.appfields;
+    var sqls = [];
+    datas.forEach(function (data) {
+        var sql = "UPDATE " + app.MAINTABLE + " SET ";
+        var value = [];
+        fields.forEach(function (field) {
+            if (data.hasOwnProperty(field.FIELDCODE)) {
+                sql += field.FIELDCODE + "=?,";
+                value.push(data[field.FIELDCODE]);
+            }
+        });
+        sql.substring(0, sql.length - 1);
+        if (data.hasOwnProperty('ID')) {
+            sql += ' WHERE id =?';
+            value.push(data.ID);
+            sqls.push(Sqlstring.format(sql, value));
+        } else if (data.hasOwnProperty('WHERE')) {
+            if (data.WHERE.trim().substring(0, 3).toUpperCase() == 'AND') {
+                sql += ' WHERE 1=1 ' + data.WHERE;
+            } else {
+                sql += ' WHERE ' + data.WHERE;
+            }
+            sqls.push(Sqlstring.format(sql, value));
         }
     });
+    if (sqls.length > 0) {
+        mysql.updateMany(app.DATASOUSE, sqls, function (err, results, fields) {
+            return callback(err, results);
+        })
+    }
+};
+/**
+ * 删除数据，支持多条数据的删除，删除格式为DATA:[{字段1:值1,字段2:值2},{字段1:值1}],其中字段必须包含ID或WHERE，否则忽略本对象删除
+ * @param appid
+ * @param datas 值字符串 必须包含id 或者WHERE
+ * @param callback
+ */
+var remove = function (appid, datas, callback) {
+    var app = apps[appid];
+    var fields = app.appfields;
+    var sqls = [];
+    datas.forEach(function (data) {
+        var sql = "DELETE FROM " + app.MAINTABLE + " WHERE ";
+        var value = [];
+        fields.forEach(function (field) {
+            if (data.hasOwnProperty(field.FIELDCODE)) {
+                sql += field.FIELDCODE + "=? and ";
+                value.push(data[field.FIELDCODE]);
+            }
+        });
+        sql += "1=1 ";
+        if (data.hasOwnProperty('WHERE')) {
+            if (data.WHERE.trim().substring(0, 3).toUpperCase() == 'AND') {
+                sql += data.WHERE;
+            } else {
+                sql += ' AND ' + data.WHERE;
+            }
+            sqls.push(Sqlstring.format(sql, value));
+        }
+    });
+    if (sqls.length > 0) {
+        mysql.removeMany(app.DATASOUSE, sqls, function (err, results, fields) {
+            return callback(err, results);
+        })
+    }
 };
 /**查询元数据的内容，按app配置信息
  *
@@ -148,8 +251,8 @@ var findOneDetailsWithObj = function (mainAppId, result, details, callback) {
         //生成sql条件
         var where = ' 1=1 ';
         where += SysappUtils.getSqlWhereByLinkApp(mainApp, detail.APPID, linkapp);
-        if(detail.WHERE&&detail.WHERE.length!=0){
-            where +=' and '+ detail.WHERE;
+        if (detail.WHERE && detail.WHERE.length != 0) {
+            where += ' and ' + detail.WHERE;
         }
         findWithQueryPaging(detail.APPID, where, detail.PAGENUM, detail.PAGESIZE, detail.ORDER,
             function (err, detailResult) {
@@ -259,6 +362,8 @@ var findListdetailWithQueryPaging = function (appid, where, pageNum, pageSize, o
     });
 };
 module.exports.insert = insert;
+module.exports.update = update;
+module.exports.remove = remove;
 module.exports.findOneWithQuery = findOneWithQuery;
 module.exports.findOneDetailsWithQuery = findOneDetailsWithQuery;
 module.exports.findWithQueryPaging = findWithQueryPaging;

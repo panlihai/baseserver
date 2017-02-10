@@ -27,6 +27,6 @@ module.exports = {
         return uuid.join('');
     },
     getUUID:function(){
-        return UUID(32,16);
+        return this.UUID(32,16);
     }
 };
