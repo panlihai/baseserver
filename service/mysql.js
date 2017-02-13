@@ -237,25 +237,32 @@ var updateMany = function (poolId, updateSqls, callback) {
      * 获取连接池并从连接池中获取链接，并执行sql
      */
     var p = pools[poolId];
-    p.getConnection({multipleStatements: true}, function (err, conn) {
-        if (err) {
-            log.err(log);
-            return callback(err, null);
-        }
-        log.info(updateSqls);
-        var sql = updateSqls.join(";");
-        sql = sql.substring(0, sql.length - 1);
-        conn.query(sql, function (err, results, fields) {
-            conn.release();
+    try {
+        p.getConnection(function (err, conn) {
             if (err) {
-                log.err(err);
-                callback(err, null);
-            } else {
-                log.log(results.toString());
-                callback(err, results, fields);
+                log.err(log);
+                return callback(err, null);
             }
-        })
-    })
+            log.info(updateSqls);
+            //並發執行
+            async.map(updateSqls, function (updateSql, cb) {
+                conn.query(updateSql, function (err, results, fields) {
+                    if (err) {
+                        log.err(err);
+                        cb(err, null);
+                    } else {
+                        cb(err, results, fields);
+                    }
+                });
+            }, function (err, results) {
+                callback(err, results);
+                conn.release();
+            });
+        });
+    } catch (err) {
+        log.err(err);
+        callback(err, null);
+    }
 };
 /**
 
@@ -305,24 +312,26 @@ var removeMany = function (poolId, deleteSqls, callback) {
      * 获取连接池并从连接池中获取链接，并执行sql
      */
     var p = pools[poolId];
-    p.getConnection({multipleStatements: true}, function (err, conn) {
+    p.getConnection( function (err, conn) {
         if (err) {
             log.err(log);
             return callback(err, null);
         }
         log.info(deleteSqls);
-        var sql = deleteSqls.join(";");
-        sql = sql.substring(0, sql.length - 1);
-        conn.query(sql, function (err, results, fields) {
+        //並發執行
+        async.map(deleteSqls, function (deleteSql, cb) {
+            conn.query(deleteSql, function (err, results, fields) {
+                if (err) {
+                    log.err(err);
+                    cb(err, null);
+                } else {
+                    cb(err, results);
+                }
+            });
+        }, function (err, results) {
+            callback(err, results);
             conn.release();
-            if (err) {
-                log.err(err);
-                callback(err, null);
-            } else {
-                log.log(results.toString());
-                callback(err, results, fields);
-            }
-        })
+        });
     })
 };
 /**

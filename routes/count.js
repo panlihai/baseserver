@@ -2,12 +2,12 @@ var sysapp = require('../models/system/sysapp.js');
 var DateUtils = require('../util/DateUtils.js');
 var async = require('async');
 module.exports = {
-    getResult: function (req,callback) {
-        sysapp.findWithQueryPaging(req.params.APPID, req.query.WHERE, req.query.PAGENUM, req.query.PAGESIZE, req.query.ORDER, function (err, results) {
+    getResult: function (params,query,callback) {
+        sysapp.findWithQueryPaging(params.APPID, query.WHERE, query.PAGENUM, query.PAGESIZE, query.ORDER, function (err, results) {
             var json;
             if (err) {
                 json = {
-                    "ACT": req.params.ACTTION,
+                    "ACT": params.ACTION,
                     "CODE": '-1',
                     "MSG": "系统异常，请参考:" + err,
                     "TIMESTAMP": DateUtils.getTimestamp()
@@ -19,7 +19,7 @@ module.exports = {
                     listsize = data.length
                 }
                 json = {
-                    "ACT": req.params.ACTION,
+                    "ACT": params.ACTION,
                     "CODE": '0',
                     "MSG": "请求成功",
                     "TIMESTAMP": DateUtils.getTimestamp(),

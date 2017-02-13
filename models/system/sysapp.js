@@ -160,7 +160,7 @@ var update = function (appid, datas, callback) {
                 value.push(data[field.FIELDCODE]);
             }
         });
-        sql.substring(0, sql.length - 1);
+        sql = sql.substring(0, sql.length - 1);
         if (data.hasOwnProperty('ID')) {
             sql += ' WHERE id =?';
             value.push(data.ID);
@@ -206,8 +206,8 @@ var remove = function (appid, datas, callback) {
             } else {
                 sql += ' AND ' + data.WHERE;
             }
-            sqls.push(Sqlstring.format(sql, value));
         }
+        sqls.push(Sqlstring.format(sql, value));
     });
     if (sqls.length > 0) {
         mysql.removeMany(app.DATASOUSE, sqls, function (err, results, fields) {
@@ -248,19 +248,20 @@ var findOneDetailsWithObj = function (mainAppId, result, details, callback) {
     async.map(details, function (detail, cb) {
         //获取appid关联appid并根据关联条件生成关联sql条件
         var linkapp = appLinks.getLinkAppObj(mainApp, detail.APPID);
-        //生成sql条件
-        var where = ' 1=1 ';
-        where += SysappUtils.getSqlWhereByLinkApp(mainApp, detail.APPID, linkapp);
-        if (detail.WHERE && detail.WHERE.length != 0) {
-            where += ' and ' + detail.WHERE;
+        if (linkapp) {
+            //生成sql条件
+            var where = ' 1=1 ';
+            where += SysappUtils.getSqlWhereByLinkApp(mainApp, detail.APPID, linkapp);
+            if (detail.WHERE && detail.WHERE.length != 0) {
+                where += ' and ' + detail.WHERE;
+            }
+            findWithQueryPaging(detail.APPID, where, detail.PAGENUM, detail.PAGESIZE, detail.ORDER,
+                function (err, detailResult) {
+                    result[detail.APPID] = detailResult;
+                    cb(err, detailResult);
+                });
         }
-        findWithQueryPaging(detail.APPID, where, detail.PAGENUM, detail.PAGESIZE, detail.ORDER,
-            function (err, detailResult) {
-                result[detail.APPID] = detailResult;
-                cb(err, detailResult);
-            });
     }, function (err, results) {
-        log.log(results);
         callback(err, result);
     });
 };
@@ -278,7 +279,6 @@ var findOneDetailsWithQuery = function (appid, where, details, callback) {
             log.err(err);
             return callback(err, null);
         }
-        details = JSON.parse(details);
         if (result.length > 0) {
             findOneDetailsWithObj(appid, result[0], details, function (err, results) {
                 if (err) {
